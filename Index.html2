@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>اختبار العلوم - متوسطة ابن حزم</title>
+  <style>
+    body {
+      background-color: #eef6ff;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      text-align: center;
+      direction: rtl;
+      padding: 20px;
+    }
+    select, button {
+      padding: 10px;
+      margin: 10px;
+      font-size: 1rem;
+    }
+    .question { margin: 20px 0; }
+    .option {
+      display: block;
+      background-color: #dff0ff;
+      border-radius: 5px;
+      margin: 5px auto;
+      padding: 10px;
+      cursor: pointer;
+      width: 80%;
+    }
+    .correct { background-color: #c8f7c5 !important; }
+    .incorrect { background-color: #ffb3b3 !important; }
+    #result {
+      font-size: 2rem;
+      margin-top: 20px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>اختبار العلوم - متوسطة ابن حزم</h2>
+
+  <div id="startScreen">
+    <label>اختر اسم الطالب:</label><br>
+    <select id="studentSelect">
+      <option value="">-- اختر الاسم --</option>
+      <option value="احمد عبد الله عبده الشهري|1">1 - احمد عبد الله عبده الشهري</option>
+      <option value="أحمد علي ابن أحمد الشهري|2">2 - أحمد علي ابن أحمد الشهري</option>
+      <option value="بدر ناصر سعيد الشهري|3">3 - بدر ناصر سعيد الشهري</option>
+      <option value="جابر احمد ابراهيم ال يحي|4">4 - جابر احمد ابراهيم ال يحي</option>
+      <option value="حسن على حسن الشهري|5">5 - حسن على حسن الشهري</option>
+      <!-- أكمل إلى الطالب 55 حسب قائمتك -->
+    </select><br>
+    <button onclick="startQuiz()">ابدأ الاختبار</button>
+  </div>
+
+  <div id="quizScreen" style="display:none;">
+    <div id="questionContainer"></div>
+  </div>
+
+  <div id="result" style="display:none;"></div>
+
+  <script>
+    const questions = [
+      { q: "ما هو المقصود بالفرضية العلمية؟", options: ["رأي شخصي", "تخمين قابل للاختبار", "نظرية مثبتة", "نتيجة نهائية"], answer: 1 },
+      { q: "أول خطوة في الطريقة العلمية:", options: ["جمع البيانات", "طرح الأسئلة", "الاستنتاج", "تجريب الفرضية"], answer: 1 },
+      { q: "ما الذي يجب فعله بعد تحليل البيانات؟", options: ["كتابة الفرضية", "طرح سؤال جديد", "استخلاص النتائج", "تجريب أخرى"], answer: 2 },
+      // أضف حتى 20 سؤالًا
+    ];
+
+    let selectedQuestions = [];
+    let current = 0;
+    let score = 0;
+    let studentName = "";
+    let studentID = "";
+
+    function startQuiz() {
+      const selected = document.getElementById("studentSelect").value;
+      if (!selected) return alert("يرجى اختيار اسم الطالب");
+      [studentName, studentID] = selected.split("|");
+
+      selectedQuestions = questions.sort(() => 0.5 - Math.random()).slice(0, 10);
+      document.getElementById("startScreen").style.display = "none";
+      document.getElementById("quizScreen").style.display = "block";
+      showQuestion();
+    }
+
+    function showQuestion() {
+      const q = selectedQuestions[current];
+      const container = document.getElementById("questionContainer");
+      container.innerHTML = `
+        <div class="question">
+          <h3>س${current + 1}: ${q.q}</h3>
+          ${q.options.map((opt, i) =>
+            `<div class="option" onclick="checkAnswer(${i}, this)">${opt}</div>`).join("")}
+        </div>
+      `;
+    }
+
+    function checkAnswer(selected, el) {
+      const correct = selectedQuestions[current].answer;
+      const options = document.querySelectorAll('.option');
+      options.forEach((opt, i) => {
+        opt.onclick = null;
+        if (i === correct) opt.classList.add("correct");
+        else if (i === selected) opt.classList.add("incorrect");
+      });
+      if (selected === correct) score++;
+      setTimeout(() => {
+        current++;
+        if (current < selectedQuestions.length) {
+          showQuestion();
+        } else {
+          finishQuiz();
+        }
+      }, 500);
+    }
+
+    function finishQuiz() {
+      const resultDiv = document.getElementById("result");
+      document.getElementById("quizScreen").style.display = "none";
+      resultDiv.style.display = "block";
+
+      const percent = Math.round((score / selectedQuestions.length) * 100);
+      resultDiv.innerHTML = `درجتك: ${score} من ${selectedQuestions.length} <br> (${percent}%)<br>` +
+        (percent >= 50 ? "أحسنت!" : "<span style='color:red;'>تحتاج لتحسين مستواك!</span>");
+
+      sendToGoogleForm(score);
+    }
+
+    function sendToGoogleForm(score) {
+      const formURL = "https://docs.google.com/forms/d/e/1FAIpQLSeqSqclAinf812BRhwnQBwApLkzSreX6Skos5l_4JSy4SRhkg/formResponse";
+      const formData = new FormData();
+      formData.append("entry.318907213", studentName);
+      formData.append("entry.599975471", studentID);
+      formData.append("entry.1005496121", score);
+
+      fetch(formURL, {
+        method: "POST",
+        mode: "no-cors",
+        body: formData
+      });
+    }
+  </script>
+
+  <footer style="margin-top: 40px; font-size: 0.9rem; color: gray;">
+    برمجة: عبدالله سالم الشهري
+  </footer>
+
+</body>
+</html>
